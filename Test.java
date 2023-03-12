@@ -1,64 +1,87 @@
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import javax.crypto.Cipher;
+import java.io.*;
+import java.nio.file.Files;
+import java.security.*;
+import javax.crypto.*;
+import javax.crypto.spec.*;
 
 public class Test {
-
+    
     public static void main(String[] args) throws Exception {
+        String inputFile = "input_text_1MB.txt";
+        String encryptedFile = "encrypted.txt";
+        String decryptedFile = "decrypted.txt";
 
         // Generate RSA key pair
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-        generator.initialize(2048);
-        KeyPair keyPair = generator.generateKeyPair();
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(3072);
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         PrivateKey privateKey = keyPair.getPrivate();
 
-        // Encrypt file with public key
-        File inputFile = new File("input_text_1KB.txt");
-       
-        FileInputStream inputStream = new FileInputStream(inputFile);
-        byte[] inputBytes = new byte[190];
-        byte[] encryptedBytes;
+        // Encrypt the input file
+        encryptFile(inputFile, encryptedFile, publicKey);
 
+        // Decrypt the encrypted file
+        decryptFile(encryptedFile, decryptedFile, privateKey);
+
+        System.out.println("Encryption and decryption done!");
+    }
+
+    public static void encryptFile(String inputFile, String outputFile, PublicKey publicKey) throws Exception {
         Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 
-        File encryptedFile = new File("encrypted.txt");
-        FileOutputStream outputStream = new FileOutputStream(encryptedFile);
+        // Get the input file size
+        long fileSize = new File(inputFile).length();
 
-        int bytesRead;
-        while ((bytesRead = inputStream.read(inputBytes)) != -1) {
-            encryptedBytes = cipher.doFinal(inputBytes, 0, bytesRead);
-            outputStream.write(encryptedBytes);
+        // Set the chunk size to encrypt
+        int chunkSize = 318; // Maximum size for RSA encryption with 3072-bit key
+
+        // Open input and output streams
+        FileInputStream inStream = new FileInputStream(inputFile);
+        FileOutputStream outStream = new FileOutputStream(outputFile);
+
+        try {
+            byte[] buffer = new byte[chunkSize];
+            int bytesRead;
+
+            // Encrypt each chunk and write to the output file
+            while ((bytesRead = inStream.read(buffer)) != -1) {
+                byte[] encryptedChunk = cipher.doFinal(buffer, 0, bytesRead);
+                outStream.write(encryptedChunk);
+            }
+        } finally {
+            inStream.close();
+            outStream.close();
         }
+    }
 
-        inputStream.close();
-        outputStream.close();
-
-        // Decrypt file with private key
-        FileInputStream encryptedInputStream = new FileInputStream(encryptedFile);
-        byte[] encryptedInputBytes = new byte[256];
-        byte[] decryptedBytes;
-
+    public static void decryptFile(String inputFile, String outputFile, PrivateKey privateKey) throws Exception {
+        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
 
-        File decryptedFile = new File("decrypted.txt");
-        FileOutputStream decryptedOutputStream = new FileOutputStream(decryptedFile);
+        // Get the input file size
+        long fileSize = new File(inputFile).length();
 
-        while ((bytesRead = encryptedInputStream.read(encryptedInputBytes)) != -1) {
-            decryptedBytes = cipher.doFinal(encryptedInputBytes, 0, bytesRead);
-            decryptedOutputStream.write(decryptedBytes);
+        // Set the chunk size to decrypt
+        int chunkSize = 384; // Maximum size for RSA decryption with 3072-bit key
+
+        // Open input and output streams
+        FileInputStream inStream = new FileInputStream(inputFile);
+        FileOutputStream outStream = new FileOutputStream(outputFile);
+
+        try {
+            byte[] buffer = new byte[chunkSize];
+            int bytesRead;
+
+            // Decrypt each chunk and write to the output file
+            while ((bytesRead = inStream.read(buffer)) != -1) {
+                byte[] decryptedChunk = cipher.doFinal(buffer, 0, bytesRead);
+                outStream.write(decryptedChunk);
+            }
+        } finally {
+            inStream.close();
+            outStream.close();
         }
-
-        encryptedInputStream.close();
-        decryptedOutputStream.close();
-
-        System.out.println("Encryption and decryption completed successfully.");
     }
 }

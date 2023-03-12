@@ -1,6 +1,6 @@
 #!/bin/bash
 
-javac Sample.java
+javac Crypto.java
 javac Timer.java
-java Sample
-echo "Script Executed!"
+java Crypto
+echo "Script Executed Sucessfully!"

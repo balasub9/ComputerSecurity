@@ -29,7 +29,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-public class Sample {
+public class Crypto {
 
     public static final Timer timer = new Timer();
     public static final String AES_CBC = "AES/CBC/PKCS5Padding";

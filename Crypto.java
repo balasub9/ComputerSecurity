@@ -15,10 +15,13 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
@@ -40,15 +43,19 @@ public class Crypto {
     public static final String RSA_OAEP_MODE = "RSA(OAEP)";
     public static final String ENC_ALGO_AES = "AES";
     public static final String ENC_ALGO_RSA = "RSA";
+    public static final String ENC_ALGO_DSA = "DSA";
     public static final String MILLISECONDS = "milliseconds";
     public static final String NANOSECONDS = "nanoseconds";
     public static final int KEY_SIZE_128 = 128;
     public static final int KEY_SIZE_256 = 256;
     public static final int KEY_SIZE_2048 = 2048;
     public static final int KEY_SIZE_3072 = 3072;
+    public static final String SHA_256 = "SHA-256";
+    public static final String SHA_512 = "SHA-512";
+    public static final String SHA3_256 = "SHA3-256";
     public static final String filePrefix = "input_text_";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception, NoSuchAlgorithmException {
         deleteFiles();
         File oneKbFile = new File(filePrefix + "1KB.txt");
         File oneMBFile = new File(filePrefix + "1MB.txt");
@@ -58,6 +65,9 @@ public class Crypto {
         SecretKey secretkey256 = getSecretKeyFor(KEY_SIZE_256, ENC_ALGO_AES);
         KeyPair secretkey2048 = getSecretKeyPairFor(KEY_SIZE_2048, ENC_ALGO_RSA);
         KeyPair secretkey3072 = getSecretKeyPairFor(KEY_SIZE_3072, ENC_ALGO_RSA);
+        KeyPair secretkeyDSA2048 = getSecretKeyPairFor(KEY_SIZE_2048, ENC_ALGO_DSA);
+        KeyPair secretkeyDSA3072 = getSecretKeyPairFor(KEY_SIZE_3072, ENC_ALGO_DSA);
+
 
         byte[] binaryOneKbFile = convertFileIntoBytes(oneKbFile);
         byte[] binaryTenMbFile = convertFileIntoBytes(tenMBFile);
@@ -103,6 +113,76 @@ public class Crypto {
         encryptAndDecrypt(ENC_ALGO_RSA, RSA_OAEP_MODE, RSA_OAEP, secretkey3072, null, binaryOneMbFile, "1MB",
                 null, KEY_SIZE_3072, encBlockSize, decryptionBlocksize);
 
+
+
+        // Section F
+        pt("");
+        pt("---------- STARTING  " + SHA_256 + "  FOR 1KB FILE  -------------");
+        hashingSHA(filePrefix + "1KB.txt", SHA_256);
+        pt("----------   " + SHA_256 + "  Completed FOR 1KB FILE  -------------");
+        pt("");
+
+        pt("---------- STARTING  " + SHA_512 + "  FOR 1KB FILE  -------------");
+        hashingSHA(filePrefix + "1KB.txt", SHA_512);
+
+        pt("----------   " + SHA_512 + "  Completed FOR 1KB FILE  -------------");
+        pt("");
+
+        pt("---------- STARTING  " + SHA3_256 + "  FOR 1KB FILE  -------------");
+        hashingSHA(filePrefix + "1KB.txt", SHA3_256);
+
+        pt("----------   " + SHA3_256 + "  Completed FOR 1KB FILE  -------------");
+        pt("");
+
+
+        pt("---------- STARTING  " + SHA_256 + "  FOR 10MB FILE  -------------");
+        hashingSHA(filePrefix + "10MB.txt", SHA_256);
+
+        pt("----------   " + SHA_256 + "  Completed FOR 10MB FILE  -------------");
+        pt("");
+
+        pt("---------- STARTING  " + SHA_512 + "  FOR 10MB FILE  -------------");
+        hashingSHA(filePrefix + "10MB.txt", SHA_512);
+
+        pt("----------   " + SHA_512 + "  Completed FOR 10MB FILE  -------------");
+        pt("");
+
+        pt("---------- STARTING  " + SHA3_256 + "  FOR 10MB FILE  -------------");
+        hashingSHA(filePrefix + "10MB.txt", SHA3_256);
+        
+        pt("----------   " + SHA3_256 + "  Completed FOR 10MB FILE  -------------");
+        pt("");
+
+
+
+        // Section G
+        pt("---------- STARTING  DSA using 2048Key  FOR 1KB FILE  -------------");
+        DSASigningAndVerification(oneKbFile, secretkeyDSA2048);
+
+        pt("----------  Completed DSA for 1KB FILE  -------------");
+        pt("");
+
+        pt("---------- STARTING  DSA using 2048Key  FOR 10MB FILE  -------------");
+        DSASigningAndVerification(tenMBFile, secretkeyDSA2048);
+
+        pt("----------  Completed DSA for 10MB FILE  -------------");
+        pt("");
+
+        // Section H
+        pt("---------- STARTING  DSA using 3072Key  FOR 1KB FILE  -------------");
+        DSASigningAndVerification(oneKbFile, secretkeyDSA3072);
+
+        pt("----------  Completed DSA for 1KB FILE  -------------");
+        pt("");
+
+
+        pt("---------- STARTING  DSA using 3072Key  FOR 10MB FILE  -------------");
+        DSASigningAndVerification(tenMBFile, secretkeyDSA3072);
+
+        pt("----------  Completed DSA for 10MB FILE  -------------");
+        pt("");
+
+
     }
 
     public static void encryptAndDecrypt(String encAlgo, String mode, String algorithm, KeyPair keypair,
@@ -144,7 +224,7 @@ public class Crypto {
     public static SecretKey getSecretKeyFor(int keysize, String encAlgorithm) throws NoSuchAlgorithmException {
         // SecureRandom is a technique to generate cryptographically strong random
         // numbers
-        pt("Generating Secret Key of size " + keysize + ".....");
+        pt(" Generating Key pair for "+ encAlgorithm +"of size " + keysize + ".....");
         timer.startTimer();
         SecureRandom randomNumber = SecureRandom.getInstanceStrong();
         // Use keygenrator for generating symmetric encryption keys for AES
@@ -160,7 +240,7 @@ public class Crypto {
      * Generates a key pair of a given key size and encryption algorithm
      */
     public static KeyPair getSecretKeyPairFor(int keysize, String encAlgorithm) throws NoSuchAlgorithmException {
-        pt("Generating Key pair of size " + keysize + ".....");
+        pt(" Generating Key pair for "+ encAlgorithm +"of size " + keysize + ".....");
         timer.startTimer();
         KeyPairGenerator keygenrator = KeyPairGenerator.getInstance(encAlgorithm);
         keygenrator.initialize(keysize);
@@ -252,6 +332,50 @@ public class Crypto {
         return originalData;
     }
 
+
+
+    private static void hashingSHA(String fileName, String algorithm) throws NoSuchAlgorithmException, IOException {
+        MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
+        FileInputStream fis = new FileInputStream(fileName);
+        byte[] bytesToRead = new byte[8192];
+        int noOfBytes = 0;
+        while ((noOfBytes = fis.read(bytesToRead)) != -1) {
+            messageDigest.update(bytesToRead, 0, noOfBytes);
+        }
+        fis.close();
+        timer.startTimer();
+        byte[] hashedOutput = messageDigest.digest();
+        long timeElapsed = timer.getExectionTimeIn(NANOSECONDS);
+        pt(algorithm+ " Hasing Completed in " + timeElapsed + NANOSECONDS);
+    }
+
+
+    public static void DSASigningAndVerification(File file, KeyPair keypair) throws 
+            IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException{
+        
+        // Sign the first file with the private key
+        byte[] file1 = convertFileIntoBytes(file);
+        timer.startTimer();
+        Signature sign = Signature.getInstance("SHA256withDSA");
+        sign.initSign(keypair.getPrivate());
+        sign.update(file1);
+        byte[] sign1 = sign.sign();
+        long timeElapsed = timer.getExectionTimeIn(NANOSECONDS);
+        pt("Signing the file completed in " + timeElapsed + NANOSECONDS);
+
+        pt("Verifying  the signature using public key..");
+        timer.startTimer();
+        sign.initVerify(keypair.getPublic());
+        sign.update(file1);
+        if(sign.verify(sign1)){
+        long timeElapsed1 = timer.getExectionTimeIn(NANOSECONDS);
+        pt("Signature verification completed successfully in" + timeElapsed1 + NANOSECONDS);
+        } else{
+          pt("Signature verification failed");
+        }
+
+    }
+
     /**
      * Reads the contents of the specified file into a byte array.
      */
@@ -265,17 +389,17 @@ public class Crypto {
         return input;
     }
 
-    // private static byte[] readDataFromFile(File file) throws IOException {
-    // ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    // try (InputStream is = new FileInputStream(file)) {
-    // byte[] buffer = new byte[1024];
-    // int bytesRead;
-    // while ((bytesRead = is.read(buffer)) != -1) {
-    // bos.write(buffer, 0, bytesRead);
-    // }
-    // }
-    // return bos.toByteArray();
-    // }
+    private static byte[] readDataFromFile(File file) throws IOException {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    try (InputStream is = new FileInputStream(file)) {
+    byte[] buffer = new byte[1024];
+    int bytesRead;
+    while ((bytesRead = is.read(buffer)) != -1) {
+    bos.write(buffer, 0, bytesRead);
+    }
+    }
+    return bos.toByteArray();
+    }
 
     public static File convertByteArrayToFile(byte[] byteArray, String fileName) throws IOException {
         File file = new File(fileName);
@@ -341,4 +465,5 @@ public class Crypto {
             System.out.println("Directory does not exist.");
         }
     }
+
 }

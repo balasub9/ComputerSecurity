@@ -291,8 +291,8 @@ public class Crypto {
         long timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
 
         pt(" Encryption Completed in " + timeElapsed + MILLISECONDS);
-        double decryptionSpeed1 = ((double) cipherData.length / timeElapsed);
-        pt(" Encryption Speed is " + decryptionSpeed1 + " bytes/milliseconds");
+        double encSpeed = ((double) inputText.length / timeElapsed);
+        pt(" Encryption Speed is " + encSpeed + " bytes/milliseconds");
 
         return cipherData;
     }
@@ -324,11 +324,18 @@ public class Crypto {
             originalData = cipher.doFinal(ciphertext);
         }
         long timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
-        if (timeElapsed > 0)
-            pt(" Decryption Completed in " + timeElapsed + MILLISECONDS);
-        else
-            pt(" Decryption Completed in " + timer.getExectionTimeIn(NANOSECONDS) + " " + NANOSECONDS);
+        long timeElapsedNN = timer.getExectionTimeIn(NANOSECONDS);
 
+        if (timeElapsed > 0){
+            pt(" Decryption Completed in " + timeElapsed + MILLISECONDS);
+            double decryptionSpeed1 = ((double) ciphertext.length / timeElapsed);
+            pt(" Decryption Speed is " + decryptionSpeed1 + " bytes/milliseconds");
+        }
+        else {
+            pt(" Decryption Completed in " + timeElapsedNN + " " + NANOSECONDS);
+            double decryptionSpeed1 = ((double) ciphertext.length / timeElapsedNN);
+            pt(" Decryption Speed is " + decryptionSpeed1 + " bytes/nanoseconds");
+        }
         return originalData;
     }
 
@@ -347,6 +354,8 @@ public class Crypto {
         byte[] hashedOutput = messageDigest.digest();
         long timeElapsed = timer.getExectionTimeIn(NANOSECONDS);
         pt(algorithm+ " Hasing Completed in " + timeElapsed + NANOSECONDS);
+        double hashSpeed = ((double) new File(fileName).length() / timeElapsed);
+        pt(" Hash Speed is " + hashSpeed + " bytes/nanoseconds");
     }
 
 
@@ -362,6 +371,8 @@ public class Crypto {
         byte[] sign1 = sign.sign();
         long timeElapsed = timer.getExectionTimeIn(NANOSECONDS);
         pt("Signing the file completed in " + timeElapsed + NANOSECONDS);
+        double sigSpeed = ((double) file1.length / timeElapsed);
+        pt(" Signature Speed is " + sigSpeed + " bytes/nanoseconds");
 
         pt("Verifying  the signature using public key..");
         timer.startTimer();
@@ -370,6 +381,8 @@ public class Crypto {
         if(sign.verify(sign1)){
         long timeElapsed1 = timer.getExectionTimeIn(NANOSECONDS);
         pt("Signature verification completed successfully in" + timeElapsed1 + NANOSECONDS);
+        double verSpeed = ((double) file1.length / timeElapsed1);
+        pt(" Signature Speed is " + verSpeed + " bytes/nanoseconds");
         } else{
           pt("Signature verification failed");
         }

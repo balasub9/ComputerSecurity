@@ -288,11 +288,9 @@ public class Crypto {
         }
         // Perform Encryption & return cipertext
 
-        long timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
+        double timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
 
-        pt(" Encryption Completed in " + timeElapsed + MILLISECONDS);
-        double encSpeed = ((double) inputText.length / timeElapsed);
-        pt(" Encryption Speed is " + encSpeed + " bytes/milliseconds");
+        printSpeed("Encryption " ,  inputText.length, timeElapsed);
 
         return cipherData;
     }
@@ -323,19 +321,11 @@ public class Crypto {
             // Decrypt Ciper and return original text
             originalData = cipher.doFinal(ciphertext);
         }
-        long timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
-        long timeElapsedNN = timer.getExectionTimeIn(NANOSECONDS);
+        double timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
 
-        if (timeElapsed > 0){
-            pt(" Decryption Completed in " + timeElapsed + MILLISECONDS);
-            double decryptionSpeed1 = ((double) ciphertext.length / timeElapsed);
-            pt(" Decryption Speed is " + decryptionSpeed1 + " bytes/milliseconds");
-        }
-        else {
-            pt(" Decryption Completed in " + timeElapsedNN + " " + NANOSECONDS);
-            double decryptionSpeed1 = ((double) ciphertext.length / timeElapsedNN);
-            pt(" Decryption Speed is " + decryptionSpeed1 + " bytes/nanoseconds");
-        }
+        printSpeed("Decryption " ,  ciphertext.length, timeElapsed);
+
+        
         return originalData;
     }
 
@@ -352,10 +342,9 @@ public class Crypto {
         fis.close();
         timer.startTimer();
         byte[] hashedOutput = messageDigest.digest();
-        long timeElapsed = timer.getExectionTimeIn(NANOSECONDS);
-        pt(algorithm+ " Hasing Completed in " + timeElapsed + NANOSECONDS);
-        double hashSpeed = ((double) new File(fileName).length() / timeElapsed);
-        pt(" Hash Speed is " + hashSpeed + " bytes/nanoseconds");
+        double timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
+        printSpeed("Hashing " ,  new File(fileName).length(), timeElapsed);
+
     }
 
 
@@ -369,20 +358,20 @@ public class Crypto {
         sign.initSign(keypair.getPrivate());
         sign.update(file1);
         byte[] sign1 = sign.sign();
-        long timeElapsed = timer.getExectionTimeIn(NANOSECONDS);
+        double timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
         pt("Signing the file completed in " + timeElapsed + NANOSECONDS);
         double sigSpeed = ((double) file1.length / timeElapsed);
         pt(" Signature Speed is " + sigSpeed + " bytes/nanoseconds");
+        printSpeed("Signing " ,  file1.length, timeElapsed);
 
         pt("Verifying  the signature using public key..");
         timer.startTimer();
         sign.initVerify(keypair.getPublic());
         sign.update(file1);
         if(sign.verify(sign1)){
-        long timeElapsed1 = timer.getExectionTimeIn(NANOSECONDS);
-        pt("Signature verification completed successfully in" + timeElapsed1 + NANOSECONDS);
-        double verSpeed = ((double) file1.length / timeElapsed1);
-        pt(" Signature Speed is " + verSpeed + " bytes/nanoseconds");
+        double timeElapsed1 = timer.getExectionTimeIn(MILLISECONDS);
+   
+        printSpeed("Signature verification " ,  file1.length, timeElapsed1);
         } else{
           pt("Signature verification failed");
         }
@@ -478,5 +467,13 @@ public class Crypto {
             System.out.println("Directory does not exist.");
         }
     }
+
+    public static void printSpeed(String operation, long fileLength, double timeElapsed1){
+        pt( operation+" completed successfully in " + timeElapsed1 + MILLISECONDS);
+        double verSpeed = ((double) timeElapsed1 / fileLength);
+        pt(operation+" Speed is " + verSpeed + " milliseconds/bytes");
+    }
+
+   
 
 }

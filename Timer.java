@@ -1,12 +1,12 @@
 public class Timer {
-    public long startTime;
+    public double startTime;
 
     public void startTimer() {
         this.startTime = System.nanoTime();
     }
 
-    public long getExectionTimeIn(String unit) {
-        long nanoSec = System.nanoTime() - startTime;
+    public double getExectionTimeIn(String unit) {
+        double nanoSec = System.nanoTime() - startTime;
         switch (unit.toLowerCase()) {
             case "seconds":
                 return nanoSec / 1000000000;

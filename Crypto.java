@@ -17,12 +17,16 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Arrays;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -264,18 +268,21 @@ public class Crypto {
     public static byte[] encryptOriginalText(byte[] inputText, SecretKey secretkey,
             PublicKey publicKey, String algorithm, byte[] initvec, int encBlockSize)
             throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
-            BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+            BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, IOException,NoSuchProviderException {
         pt(" Encryption Started...");
-        timer.startTimer();
+
+        
         // Create a new Cipher object with required algorithm
-        Cipher cipher = Cipher.getInstance(algorithm);
+        Cipher cipher ;
         // Initialize Cipher object with key and initialization vector
         byte[] cipherData;
         if (algorithm.contains(ENC_ALGO_RSA)) {
+            cipher = Cipher.getInstance(algorithm);
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
             ByteBuffer byteBuffer = ByteBuffer.wrap(inputText);
             byte[] batch = new byte[encBlockSize];
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            timer.startTimer();
             while (byteBuffer.hasRemaining()) {
                 byteBuffer.get(batch, 0, Math.min(byteBuffer.remaining(), encBlockSize));
                 byte[] cipherbatch = cipher.doFinal(batch);
@@ -283,7 +290,10 @@ public class Crypto {
             }
             cipherData = outputStream.toByteArray();
         } else {
+            Security.addProvider(new BouncyCastleProvider());
+            cipher = Cipher.getInstance(algorithm, "BC");
             cipher.init(Cipher.ENCRYPT_MODE, secretkey, new IvParameterSpec(initvec));
+            timer.startTimer();
             cipherData = cipher.doFinal(inputText);
         }
         // Perform Encryption & return cipertext
@@ -298,18 +308,19 @@ public class Crypto {
     public static byte[] decryptCipher(byte[] ciphertext, SecretKey secretkey, PrivateKey privateKey, String algorithm,
             byte[] initvec, int decryptionBlockSize)
             throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
-            BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+            BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, IOException, NoSuchProviderException {
         pt(" Decryption Started...");
-        timer.startTimer();
         // Create a new Cipher object with AES/CBC/PKCS5Padding decryption mode
-        Cipher cipher = Cipher.getInstance(algorithm);
+        Cipher cipher ;
         // Initialize the Cipher object with the provided key and initialization vector
         byte[] originalData;
         if (algorithm.contains(ENC_ALGO_RSA)) {
+            cipher = Cipher.getInstance(algorithm);
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
             ByteBuffer byteBuffer = ByteBuffer.wrap(ciphertext);
             byte[] batch = new byte[decryptionBlockSize];
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            timer.startTimer();
             while (byteBuffer.hasRemaining()) {
                 byteBuffer.get(batch, 0, Math.min(byteBuffer.remaining(), decryptionBlockSize));
                 byte[] cipherbatch = cipher.doFinal(batch);
@@ -317,8 +328,11 @@ public class Crypto {
             }
             originalData = outputStream.toByteArray();
         } else {
+            Security.addProvider(new BouncyCastleProvider());
+            cipher = Cipher.getInstance(algorithm, "BC");
             cipher.init(Cipher.DECRYPT_MODE, secretkey, new IvParameterSpec(initvec));
             // Decrypt Ciper and return original text
+            timer.startTimer();
             originalData = cipher.doFinal(ciphertext);
         }
         double timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
@@ -331,16 +345,18 @@ public class Crypto {
 
 
 
-    private static void hashingSHA(String fileName, String algorithm) throws NoSuchAlgorithmException, IOException {
-        MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
+    private static void hashingSHA(String fileName, String algorithm) throws NoSuchAlgorithmException, IOException, NoSuchProviderException {
+        Security.addProvider(new BouncyCastleProvider());
+
+        MessageDigest messageDigest = MessageDigest.getInstance(algorithm , "BC");
         FileInputStream fis = new FileInputStream(fileName);
         byte[] bytesToRead = new byte[8192];
         int noOfBytes = 0;
+        timer.startTimer();
         while ((noOfBytes = fis.read(bytesToRead)) != -1) {
             messageDigest.update(bytesToRead, 0, noOfBytes);
         }
         fis.close();
-        timer.startTimer();
         byte[] hashedOutput = messageDigest.digest();
         double timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
         printSpeed("Hashing " ,  new File(fileName).length(), timeElapsed);
@@ -359,9 +375,7 @@ public class Crypto {
         sign.update(file1);
         byte[] sign1 = sign.sign();
         double timeElapsed = timer.getExectionTimeIn(MILLISECONDS);
-        pt("Signing the file completed in " + timeElapsed + NANOSECONDS);
-        double sigSpeed = ((double) file1.length / timeElapsed);
-        pt(" Signature Speed is " + sigSpeed + " bytes/nanoseconds");
+
         printSpeed("Signing " ,  file1.length, timeElapsed);
 
         pt("Verifying  the signature using public key..");
@@ -470,7 +484,7 @@ public class Crypto {
 
     public static void printSpeed(String operation, long fileLength, double timeElapsed1){
         pt( operation+" completed successfully in " + timeElapsed1 + MILLISECONDS);
-        double verSpeed = ((double) timeElapsed1 / fileLength);
+        double verSpeed = ((double) timeElapsed1 / fileLength) * 1e-5;
         pt(operation+" Speed is " + verSpeed + " milliseconds/bytes");
     }
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-javac Crypto.java
+javac -cp .:bcprov-ext-jdk18on-172.jar Crypto.java
 javac Timer.java
-java Crypto
+java -cp .:bcprov-ext-jdk18on-172.jar Crypto
 
 echo "Script Executed Sucessfully!"
